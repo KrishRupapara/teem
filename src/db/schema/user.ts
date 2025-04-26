@@ -35,6 +35,7 @@ export const sessionTable = pgTable("session", {
     withTimezone: true,
     mode: "date",
   }).notNull(),
+  isVerified: boolean().default(false)
 });
 
 export type User = InferSelectModel<typeof userTable>;
