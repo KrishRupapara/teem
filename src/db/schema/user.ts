@@ -1,6 +1,7 @@
 import { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
+  customType,
   integer,
   pgTable,
   serial,
@@ -8,10 +9,21 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
+const bytea = customType<{
+  data: Uint8Array;
+  notNull: true;
+  default: false;
+}>({
+  dataType() {
+    return "bytea";
+  },
+});
+
 export const userTable = pgTable("user", {
   id: serial().primaryKey(),
   name: text().notNull(),
   email: text().notNull().unique(),
+  recoveryCode: bytea(),
   passowrd: text(),
   picture: text(),
   organization: text(),
@@ -35,7 +47,7 @@ export const sessionTable = pgTable("session", {
     withTimezone: true,
     mode: "date",
   }).notNull(),
-  isVerified: boolean().default(false)
+  isVerified: boolean().default(false),
 });
 
 export type User = InferSelectModel<typeof userTable>;
