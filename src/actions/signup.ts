@@ -21,7 +21,10 @@ import { redirect } from "next/navigation";
 
 const ipBucket = new RefillingTokenBucket<string>(3, 10);
 
-export async function SignUpAction(_prev: ActionResult, formData: FormData) {
+export async function SignUpAction(
+    _prev: ActionResult,
+    formData: FormData
+): Promise<ActionResult> {
     if (!globalPOSTRateLimit()) return { message: "Too many requests" };
 
     const clientIP = (await headers()).get("X-Forwaded-For");
