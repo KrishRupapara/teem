@@ -16,70 +16,73 @@ import {
     setSessionTokenCookie,
 } from "@/lib/server/session";
 import { createUser, verifyUsernameInput } from "@/lib/server/user";
+import { formStateToError, toFormState } from "@/utils/form-message";
+import { SignUpSchema } from "@/utils/form-schema";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 const ipBucket = new RefillingTokenBucket<string>(3, 10);
 
-export async function SignUpAction(
-    _prev: ActionResult,
-    formData: FormData
-): Promise<ActionResult> {
-    if (!globalPOSTRateLimit()) return { message: "Too many requests" };
+export async function SignUpAction(_prev: ActionResult, formData: FormData) {
+    try {
+        if (!globalPOSTRateLimit())
+            return toFormState("ERROR", "Too many requests");
 
-    const clientIP = (await headers()).get("X-Forwaded-For");
-    if (clientIP !== null && !ipBucket.check(clientIP, 1))
-        return { message: "Too many requests" };
+        const clientIP = (await headers()).get("X-Forwaded-For");
+        if (clientIP !== null && !ipBucket.check(clientIP, 1))
+            return toFormState("ERROR", "Too many requests");
 
-    const email = formData.get("email");
-    const username = formData.get("username");
-    const password = formData.get("password");
+        const data = {
+            username: formData.get("username"),
+            email: formData.get("email"),
+            password: formData.get("password"),
+        };
 
-    if (
-        typeof email !== "string" ||
-        typeof username !== "string" ||
-        typeof password !== "string"
-    )
-        return { message: "Invalid or missing fields" };
+        const result = SignUpSchema.parse(data);
 
-    if (email === "" || username === "" || password === "")
-        return { message: "Please Enter your username, email and password" };
+        const emailAvailable = await checkEmailAvailability(result.email);
+        if (!emailAvailable)
+            return toFormState("ERROR", "Email is already used");
 
-    if (!verifyEmailInput(email)) return { message: "Invalid email" };
+        // const strongPassword = await verifyPasswordStrength(password);
+        // if (!strongPassword) return { message: "Weak Password" };
 
-    const emailAvailable = await checkEmailAvailability(email);
-    if (!emailAvailable) return { message: "Email is already used" };
+        if (clientIP !== null && !ipBucket.consume(clientIP, 1))
+            return toFormState("ERROR", "Too many requests");
 
-    if (!verifyUsernameInput(username)) return { message: "Invalid username" };
+        const user = await createUser(
+            result.email,
+            result.username,
+            result.password
+        );
+        const emailVerificationRequest = await createEmailVerificationRequest(
+            user.id,
+            user.email
+        );
 
-    const strongPassword = await verifyPasswordStrength(password);
-    if (!strongPassword) return { message: "Weak Password" };
+        await sendVerificationEmail(
+            emailVerificationRequest.email,
+            emailVerificationRequest.code
+        );
+        await setEmailVerificationRequestCookie(emailVerificationRequest);
 
-    if (clientIP !== null && !ipBucket.consume(clientIP, 1))
-        return { message: "Too many requests" };
+        const sessionFlags: SessionFlags = {
+            twoFactorVerified: false,
+        };
 
-    const user = await createUser(email, username, password);
-    const emailVerificationRequest = await createEmailVerificationRequest(
-        user.id,
-        user.email
-    );
+        const sessionToken = generateSessionToken();
+        const session = await createSession(
+            sessionToken,
+            user.id,
+            sessionFlags
+        );
 
-    await sendVerificationEmail(
-        emailVerificationRequest.email,
-        emailVerificationRequest.code
-    );
-    await setEmailVerificationRequestCookie(emailVerificationRequest);
+        await setSessionTokenCookie(sessionToken, session.expiresAt);
 
-    const sessionFlags: SessionFlags = {
-        twoFactorVerified: false,
-    };
-
-    const sessionToken = generateSessionToken();
-    const session = await createSession(sessionToken, user.id, sessionFlags);
-
-    await setSessionTokenCookie(sessionToken, session.expiresAt);
-
-    return redirect("/auth/2fa/setup");
+        return toFormState("SUCCESS", "Signup Successful!");
+    } catch (err: unknown) {
+        return formStateToError(err);
+    }
 }
 
 interface ActionResult {

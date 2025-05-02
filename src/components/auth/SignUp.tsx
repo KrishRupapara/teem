@@ -7,15 +7,17 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { SubmitButton } from "../ui/submit-button";
 import { Icons } from "../ui/icons";
 import { SignUpAction } from "@/actions/signup";
-
-const initialMessage = {
-    message: "",
-};
+import { EMPTY_STATE_FORM } from "@/utils/form-message";
+import { useToastMessage } from "@/hooks/useToastMessage";
+import { FieldError } from "../ui/field-error";
+import Link from "next/link";
 
 export default function SignUpComponent() {
     const pending = false;
-    const [state, formAction] = useActionState(SignUpAction, initialMessage);
+    const [state, formAction] = useActionState(SignUpAction, EMPTY_STATE_FORM);
     const [isVisible, setIsVisible] = useState(false);
+
+    useToastMessage(state, "/");
 
     return (
         <div className="flex w-screen h-screen flex-col items-center gap-6 pt-[8%]">
@@ -30,13 +32,19 @@ export default function SignUpComponent() {
             <div className="space-y-6">
                 <h1 className="text-center">Create your Account</h1>
                 <form action={formAction} className="w-[400px] space-y-3">
-                    <Input placeholder="name" id="name" name="name" />
+                    <Input
+                        placeholder="username"
+                        id="username"
+                        name="username"
+                    />
+                    <FieldError formState={state} name="username" />
                     <Input
                         type="email"
                         placeholder="Email"
                         id="email"
                         name="email"
                     />
+                    <FieldError formState={state} name="email" />
                     <div className="flex items-center">
                         <Input
                             type={isVisible ? "text" : "password"}
@@ -56,6 +64,7 @@ export default function SignUpComponent() {
                             )}
                         </span>
                     </div>
+                    <FieldError formState={state} name="password" />
                     <SubmitButton
                         label="Submit"
                         pending={pending}
@@ -66,6 +75,15 @@ export default function SignUpComponent() {
                     />
                 </form>
             </div>
+            <h1>
+                Already have an account?{" "}
+                <Link
+                    href={"/auth/signin"}
+                    className="font-semibold hover:underline"
+                >
+                    SignIn
+                </Link>
+            </h1>
         </div>
     );
 }
