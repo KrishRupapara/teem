@@ -13,9 +13,16 @@ import { FieldError } from "../ui/field-error";
 import Link from "next/link";
 
 export default function SignUpComponent() {
-    const pending = false;
-    const [state, formAction] = useActionState(SignUpAction, EMPTY_STATE_FORM);
+    const [state, formAction, pending] = useActionState(
+        SignUpAction,
+        EMPTY_STATE_FORM
+    );
     const [isVisible, setIsVisible] = useState(false);
+    const [formValues, setFormValues] = useState({
+        username: "",
+        email: "",
+        password: "",
+    });
 
     useToastMessage(state, "/");
 
@@ -30,41 +37,68 @@ export default function SignUpComponent() {
             />
 
             <div className="space-y-6">
-                <h1 className="text-center">Create your Account</h1>
+                <h1>Create your Account</h1>
                 <form action={formAction} className="w-[400px] space-y-3">
-                    <Input
-                        placeholder="username"
-                        id="username"
-                        name="username"
-                    />
-                    <FieldError formState={state} name="username" />
-                    <Input
-                        type="email"
-                        placeholder="Email"
-                        id="email"
-                        name="email"
-                    />
-                    <FieldError formState={state} name="email" />
-                    <div className="flex items-center">
+                    <div>
                         <Input
-                            type={isVisible ? "text" : "password"}
-                            placeholder="Passowrd"
-                            id="password"
-                            name="password"
+                            placeholder="Username"
+                            id="username"
+                            name="username"
+                            value={formValues.username}
+                            onChange={(e) =>
+                                setFormValues({
+                                    ...formValues,
+                                    username: e.target.value,
+                                })
+                            }
                         />
-
-                        <span
-                            className="-ml-10 cursor-pointer"
-                            onClick={() => setIsVisible((s) => !s)}
-                        >
-                            {isVisible ? (
-                                <EyeOffIcon className="h-6 w-6" />
-                            ) : (
-                                <EyeIcon className="h-6 w-6" />
-                            )}
-                        </span>
+                        <FieldError formState={state} name="username" />
                     </div>
-                    <FieldError formState={state} name="password" />
+                    <div>
+                        <Input
+                            type="email"
+                            placeholder="Email"
+                            id="email"
+                            name="email"
+                            value={formValues.email}
+                            onChange={(e) =>
+                                setFormValues({
+                                    ...formValues,
+                                    email: e.target.value,
+                                })
+                            }
+                        />
+                        <FieldError formState={state} name="email" />
+                    </div>
+                    <div>
+                        <div className="flex items-center">
+                            <Input
+                                type={isVisible ? "text" : "password"}
+                                placeholder="Passowrd"
+                                id="password"
+                                name="password"
+                                value={formValues.password}
+                                onChange={(e) =>
+                                    setFormValues({
+                                        ...formValues,
+                                        password: e.target.value,
+                                    })
+                                }
+                            />
+
+                            <span
+                                className="-ml-10 cursor-pointer"
+                                onClick={() => setIsVisible((s) => !s)}
+                            >
+                                {isVisible ? (
+                                    <EyeOffIcon className="h-6 w-6" />
+                                ) : (
+                                    <EyeIcon className="h-6 w-6" />
+                                )}
+                            </span>
+                        </div>
+                        <FieldError formState={state} name="password" />
+                    </div>
                     <SubmitButton
                         label="Submit"
                         pending={pending}
@@ -79,7 +113,7 @@ export default function SignUpComponent() {
                 Already have an account?{" "}
                 <Link
                     href={"/auth/signin"}
-                    className="font-semibold hover:underline"
+                    className="text-primary font-semibold hover:underline"
                 >
                     SignIn
                 </Link>

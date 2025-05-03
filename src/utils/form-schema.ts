@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const SignUpSchema = z.object({
-    username: z.string().min(1, "Please Enter your name"),
+    username: z.string().min(1, "Please Enter your username"),
     email: z.string().email("Please Enter your email"),
     password: z
         .string()
-        .min(8, { message: "Password must be atleast 8 letters long" })
+        .min(8, { message: "Password must be atleast 8 characters long" })
         .regex(
             new RegExp(".*[A-Z].*"),
             "Password must contain atleast one uppercase character"

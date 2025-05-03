@@ -19,7 +19,6 @@ import { createUser, verifyUsernameInput } from "@/lib/server/user";
 import { formStateToError, toFormState } from "@/utils/form-message";
 import { SignUpSchema } from "@/utils/form-schema";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 
 const ipBucket = new RefillingTokenBucket<string>(3, 10);
 
@@ -81,6 +80,7 @@ export async function SignUpAction(_prev: ActionResult, formData: FormData) {
 
         return toFormState("SUCCESS", "Signup Successful!");
     } catch (err: unknown) {
+        console.error("Error is", err);
         return formStateToError(err);
     }
 }
