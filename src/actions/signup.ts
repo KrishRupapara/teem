@@ -19,6 +19,7 @@ import { createUser, verifyUsernameInput } from "@/lib/server/user";
 import { formStateToError, toFormState } from "@/utils/form-message";
 import { SignUpSchema } from "@/utils/form-schema";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 const ipBucket = new RefillingTokenBucket<string>(3, 10);
 
@@ -40,6 +41,7 @@ export async function SignUpAction(_prev: ActionResult, formData: FormData) {
         const result = SignUpSchema.parse(data);
 
         const emailAvailable = await checkEmailAvailability(result.email);
+
         if (!emailAvailable)
             return toFormState("ERROR", "Email is already used");
 
@@ -78,7 +80,7 @@ export async function SignUpAction(_prev: ActionResult, formData: FormData) {
 
         await setSessionTokenCookie(sessionToken, session.expiresAt);
 
-        return toFormState("SUCCESS", "Signup Successful!");
+        return redirect("/auth/2fa/setup");
     } catch (err: unknown) {
         console.error("Error is", err);
         return formStateToError(err);
